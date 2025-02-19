@@ -131,4 +131,4 @@ if user_input:
 if st.button("Clear Chat"):
     st.session_state.messages = []
     memory.clear()
-    st.experimental_rerun()
+    st.rerun()
