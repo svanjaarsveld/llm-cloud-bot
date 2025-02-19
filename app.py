@@ -3,7 +3,9 @@ from google.cloud import storage
 from langchain.vectorstores.chroma import Chroma
 from langchain_google_vertexai import VertexAI,VertexAIEmbeddings
 from langchain.prompts import PromptTemplate
-from langchain.chains import ConversationalRetrievalChain
+#from langchain.chains import ConversationalRetrievalChain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
 from langchain.memory import ConversationBufferMemory
 #from langchain.chat_models import ChatOpenAI
 import os
@@ -79,9 +81,17 @@ llm_gemini = VertexAI(
     verbose=True,
 )
 
-conversational_retrieval = ConversationalRetrievalChain.from_llm(
-    llm=llm_gemini, retriever=retriever, memory=memory, verbose=False
-)
+
+# =============================================================================
+# conversational_retrieval = ConversationalRetrievalChain.from_llm(
+#     llm=llm_gemini, retriever=retriever, memory=memory, verbose=False
+# )
+# =============================================================================
+
+# Recreate the retrieval and combine docs chain
+combine_docs_chain = create_stuff_documents_chain(llm_gemini, prompt)
+retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
+
 
 # Streamlit app
 st.set_page_config(page_title="LLM AI Chatbot", layout="centered")
@@ -118,7 +128,8 @@ if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     # Get the AI assistant's response
-    response = conversational_retrieval({"question": user_input})["answer"]
+    #response = conversational_retrieval({"question": user_input})["answer"]
+    response = retrieval_chain.invoke({"input": user_input})['answer']
 
     # Store AI's response in the chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
